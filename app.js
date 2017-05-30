@@ -31,9 +31,15 @@ const ffmpeg = require('fluent-ffmpeg')
     return /(.+)\.\w+$/.exec(fileName)[1]
   }
 
-  const originalFiles = fs.readdirSync(originalDir) //获取源目录所有文件名
+  //创建一个存放剧集海报的文件夹
+  const BundlePosterFolder = path.join(imgDir, 'bundlePosters')
+  if (!fs.existsSync(BundlePosterFolder)) {
+    fs.mkdirSync(BundlePosterFolder)
+  }
 
-  originalFiles.forEach(function (bundleDir) {
+  const bundles = fs.readdirSync(originalDir) //获取源目录所有文件名
+
+  bundles.forEach(function (bundleDir) {
     const bundleDirPath = path.join(originalDir, bundleDir)
     if (!isDir(bundleDirPath)) return
 
@@ -48,7 +54,12 @@ const ffmpeg = require('fluent-ffmpeg')
 
     bundleFiles.forEach(function (videoDir) {
       const VideoDirPath = path.join(bundleDirPath, videoDir)
-      if (!isDir(VideoDirPath)) return
+      if (!isDir(VideoDirPath)) {
+        //拷贝剧集海报
+        fs.writeFileSync(path.join(BundlePosterFolder, videoDir), fs.readFileSync(VideoDirPath))
+        return
+      }
+
       //读取视频文件夹下的视频文件
       const videoFiles = fs.readdirSync(VideoDirPath)
       var videoFilePath = null
@@ -70,8 +81,8 @@ const ffmpeg = require('fluent-ffmpeg')
       }
 
       //set the ffmpeg, ffprobe and flvtool2/flvmeta binary paths manually by using the following API commands:
-      ffmpeg.setFfmpegPath(path.join(__dirname,'./ffmpeg/ffmpeg.exe'))
-      ffmpeg.setFfprobePath(path.join(__dirname,'./ffmpeg/ffprobe.exe'))
+      ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
+      ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
       //ffmpeg.setFlvtoolPath('ffplay.exe')
       //抽帧
       const imgName = `${videoDir}_${videoName}.jpg`
@@ -80,7 +91,7 @@ const ffmpeg = require('fluent-ffmpeg')
           //console.log('Will generate ' + filenames.join(', '))
         })
         .on('end', function () {
-          console.log('video: ' + videoName + ' Screenshots over');
+          console.log('video: ' + videoName + ' 抽帧成功');
         })
         .on('error', function (err) {
           console.log('an error happened: ' + err.message + ' => video:' + videoName + ' 抽帧失败');
