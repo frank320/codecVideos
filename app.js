@@ -1,7 +1,8 @@
 /**
  * Created by Frank on 2017/5/29.
  * 批量视频抽帧
- * originalDir: 目录层级 originalDir/剧集文件夹/单个视频文件夹/视频文件+海报
+ * originalDir: 目录层级 originalDir/剧集文件夹/单个视频文件夹/视频文件+[海报]
+ * node app.js originalDir imgDir
  */
 const fs = require('fs')
 const path = require('path')
@@ -40,6 +41,8 @@ const ffmpeg = require('fluent-ffmpeg')
   const bundles = fs.readdirSync(originalDir) //获取源目录所有文件名
 
   bundles.forEach(function (bundleDir) {
+
+
     const bundleDirPath = path.join(originalDir, bundleDir)
     if (!isDir(bundleDirPath)) return
 
@@ -76,7 +79,7 @@ const ffmpeg = require('fluent-ffmpeg')
         videoName = getNoneExtFileName(video)
       }
       if (!videoFilePath) {
-        console.log('视频文件不存在')
+        console.log(bundleDir + videoDir + '视频文件不存在')
         return
       }
 
@@ -98,7 +101,7 @@ const ffmpeg = require('fluent-ffmpeg')
         })
         .screenshots({
           count: 1,
-          timestamps: ['50%'],
+          timestamps: ['40%'],
           filename: imgName,
           folder: imgBundleFolder,
           size: '350x200'
