@@ -39,74 +39,165 @@ const ffmpeg = require('fluent-ffmpeg')
   }
 
   const bundles = fs.readdirSync(originalDir) //获取源目录所有文件名
+  async function screenShot() {
+    try {
+      for (let bundleDir of  bundles) {
+        const bundleDirPath = path.join(originalDir, bundleDir)
+        if (!isDir(bundleDirPath)) return
+        //读取每个剧集的文件
+        const bundleFiles = fs.readdirSync(bundleDirPath)
 
-  bundles.forEach(function (bundleDir) {
+        //创建一个存放图片的剧集文件夹
+        const imgBundleFolder = path.join(imgDir, bundleDir)
+        if (!fs.existsSync(imgBundleFolder)) {
+          fs.mkdirSync(imgBundleFolder)
+        }
 
+        //使用async函数控制流程 即 处理完一个视频后再处理下一个视频
+        async function bundleVideoScreenShot(bundleFiles) {
+          try {
+            for (let videoDir of bundleFiles) {
+              await new Promise(resolve=> {
+                const VideoDirPath = path.join(bundleDirPath, videoDir)
+                if (!isDir(VideoDirPath)) {
+                  //拷贝剧集海报
+                  fs.writeFileSync(path.join(BundlePosterFolder, videoDir), fs.readFileSync(VideoDirPath))
+                  return resolve('success')
+                }
 
-    const bundleDirPath = path.join(originalDir, bundleDir)
-    if (!isDir(bundleDirPath)) return
+                //读取视频文件夹下的视频文件
+                const videoFiles = fs.readdirSync(VideoDirPath)
+                var videoFilePath = null
+                var videoName = null
+                if (videoFiles.length === 1) {
+                  //只有视频 直接抽帧
+                  videoFilePath = path.join(VideoDirPath, videoFiles[0])
+                  videoName = getNoneExtFileName(videoFiles[0])
+                }
+                if (videoFiles.length === 2) {
+                  //若有海报
+                  const video = isImg(videoFiles[0]) ? videoFiles[1] : videoFiles[0]
+                  videoFilePath = path.join(VideoDirPath, video)
+                  videoName = getNoneExtFileName(video)
+                }
+                if (!videoFilePath) {
+                  console.log(bundleDir + videoDir + '视频文件不存在')
+                  return resolve('success')
+                }
 
-    //读取每个剧集的文件
-    const bundleFiles = fs.readdirSync(bundleDirPath)
+                //set the ffmpeg, ffprobe and flvtool2/flvmeta binary paths manually by using the following API commands:
+                //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
+                //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
+                //ffmpeg.setFlvtoolPath('ffplay.exe')
+                //抽帧
+                const imgName = `${videoDir}_${videoName}.jpg`
+                ffmpeg(videoFilePath)
+                  .on('filenames', function (filenames) {
+                    //console.log('Will generate ' + filenames.join(', '))
+                  })
+                  .on('end', function () {
+                    console.log(videoName + ' 抽帧成功')
+                    resolve('success')
+                  })
+                  .on('error', function (err) {
+                    console.log('an error happened: ' + err.message + ' =>' + videoName + ' 抽帧失败')
+                    resolve('fail')
+                  })
+                  .screenshots({
+                    count: 1,
+                    timestamps: ['40%'],
+                    filename: imgName,
+                    folder: imgBundleFolder,
+                    size: '350x200'
+                  })
+              })
+            }
+          } catch (e) {
+            //overlook error
 
-    //创建一个存放图片的剧集文件夹
-    const imgBundleFolder = path.join(imgDir, bundleDir)
-    if (!fs.existsSync(imgBundleFolder)) {
-      fs.mkdirSync(imgBundleFolder)
+          }
+          console.log(`剧集:${bundleDir} 处理完毕！！！`)
+          console.log('')
+        }
+
+        //处理单个剧集下的视频
+        await bundleVideoScreenShot(bundleFiles)
+      }
+    } catch (e) {
+      //overlook error
     }
 
-    bundleFiles.forEach(function (videoDir) {
-      const VideoDirPath = path.join(bundleDirPath, videoDir)
-      if (!isDir(VideoDirPath)) {
-        //拷贝剧集海报
-        fs.writeFileSync(path.join(BundlePosterFolder, videoDir), fs.readFileSync(VideoDirPath))
-        return
-      }
+    console.log(`${originalDir} 目录下所有视频处理完毕`)
+  }
 
-      //读取视频文件夹下的视频文件
-      const videoFiles = fs.readdirSync(VideoDirPath)
-      var videoFilePath = null
-      var videoName = null
-      if (videoFiles.length === 1) {
-        //只有视频 直接抽帧
-        videoFilePath = path.join(VideoDirPath, videoFiles[0])
-        videoName = getNoneExtFileName(videoFiles[0])
-      }
-      if (videoFiles.length === 2) {
-        //若有海报
-        const video = isImg(videoFiles[0]) ? videoFiles[1] : videoFiles[0]
-        videoFilePath = path.join(VideoDirPath, video)
-        videoName = getNoneExtFileName(video)
-      }
-      if (!videoFilePath) {
-        console.log(bundleDir + videoDir + '视频文件不存在')
-        return
-      }
+  screenShot()
+  //bundles.forEach(function (bundleDir) {
+  //
+  //
+  //  const bundleDirPath = path.join(originalDir, bundleDir)
+  //  if (!isDir(bundleDirPath)) return
+  //
+  //  //读取每个剧集的文件
+  //  const bundleFiles = fs.readdirSync(bundleDirPath)
+  //
+  //  //创建一个存放图片的剧集文件夹
+  //  const imgBundleFolder = path.join(imgDir, bundleDir)
+  //  if (!fs.existsSync(imgBundleFolder)) {
+  //    fs.mkdirSync(imgBundleFolder)
+  //  }
+  //
 
-      //set the ffmpeg, ffprobe and flvtool2/flvmeta binary paths manually by using the following API commands:
-      //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
-      //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
-      //ffmpeg.setFlvtoolPath('ffplay.exe')
-      //抽帧
-      const imgName = `${videoDir}_${videoName}.jpg`
-      ffmpeg(videoFilePath)
-        .on('filenames', function (filenames) {
-          //console.log('Will generate ' + filenames.join(', '))
-        })
-        .on('end', function () {
-          console.log('video: ' + videoName + ' 抽帧成功');
-        })
-        .on('error', function (err) {
-          console.log('an error happened: ' + err.message + ' => video:' + videoName + ' 抽帧失败');
-        })
-        .screenshots({
-          count: 1,
-          timestamps: ['40%'],
-          filename: imgName,
-          folder: imgBundleFolder,
-          size: '350x200'
-        })
-    })
-
-  })
+  //bundleFiles.forEach(function (videoDir) {
+  //  const VideoDirPath = path.join(bundleDirPath, videoDir)
+  //  if (!isDir(VideoDirPath)) {
+  //    //拷贝剧集海报
+  //    fs.writeFileSync(path.join(BundlePosterFolder, videoDir), fs.readFileSync(VideoDirPath))
+  //    return
+  //  }
+  //
+  //  //读取视频文件夹下的视频文件
+  //  const videoFiles = fs.readdirSync(VideoDirPath)
+  //  var videoFilePath = null
+  //  var videoName = null
+  //  if (videoFiles.length === 1) {
+  //    //只有视频 直接抽帧
+  //    videoFilePath = path.join(VideoDirPath, videoFiles[0])
+  //    videoName = getNoneExtFileName(videoFiles[0])
+  //  }
+  //  if (videoFiles.length === 2) {
+  //    //若有海报
+  //    const video = isImg(videoFiles[0]) ? videoFiles[1] : videoFiles[0]
+  //    videoFilePath = path.join(VideoDirPath, video)
+  //    videoName = getNoneExtFileName(video)
+  //  }
+  //  if (!videoFilePath) {
+  //    console.log(bundleDir + videoDir + '视频文件不存在')
+  //    return
+  //  }
+  //
+  //  //set the ffmpeg, ffprobe and flvtool2/flvmeta binary paths manually by using the following API commands:
+  //  //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
+  //  //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
+  //  //ffmpeg.setFlvtoolPath('ffplay.exe')
+  //  //抽帧
+  //  const imgName = `${videoDir}_${videoName}.jpg`
+  //  ffmpeg(videoFilePath)
+  //    .on('filenames', function (filenames) {
+  //      //console.log('Will generate ' + filenames.join(', '))
+  //    })
+  //    .on('end', function () {
+  //      console.log('video: ' + videoName + ' 抽帧成功');
+  //    })
+  //    .on('error', function (err) {
+  //      console.log('an error happened: ' + err.message + ' => video:' + videoName + ' 抽帧失败');
+  //    })
+  //    .screenshots({
+  //      count: 1,
+  //      timestamps: ['40%'],
+  //      filename: imgName,
+  //      folder: imgBundleFolder,
+  //      size: '350x200'
+  //    })
+  //})
+  //})
 })()

@@ -45,60 +45,128 @@
     fs.mkdirSync(bundleDir)
   }
 
+  //使用async函数控制流程 即 处理完一个视频后再处理下一个视频
+  async function codecVideos() {
+    try {
+      for (let videoDir of contentFiles) {
+        await new Promise(resolve=> {
+          const VideoDirPath = path.join(originalDir, videoDir)
+          if (!isDir(VideoDirPath)) {
+            //拷贝剧集海报
+            fs.writeFileSync(path.join(bundleDir, videoDir), fs.readFileSync(VideoDirPath))
+            return resolve('not dir')
+          }
+          //读取视频文件夹下的视频文件
+          const videoFiles = fs.readdirSync(VideoDirPath)
+          var videoFilePath = null
+          var videoName = null
+          if (videoFiles.length === 1) {
+            //只有视频 直接抽帧
+            videoFilePath = path.join(VideoDirPath, videoFiles[0])
+            videoName = getNoneExtFileName(videoFiles[0])
+          }
+          if (videoFiles.length === 2) {
+            //若有海报
+            const video = isImg(videoFiles[0]) ? videoFiles[1] : videoFiles[0]
+            videoFilePath = path.join(VideoDirPath, video)
+            videoName = getNoneExtFileName(video)
+          }
+          if (!videoFilePath) {
+            console.log(bundleDir + videoDir + '视频文件不存在')
+            return resolve('no exist file')
+          }
+
+          //创建存放单个视频的文件夹
+          const saveVideoDir = path.join(bundleDir, videoDir)
+          if (!fs.existsSync(saveVideoDir)) {
+            fs.mkdirSync(saveVideoDir)
+          }
+
+          //开始转码
+          //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
+          //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
+
+          new ffmpeg({source: videoFilePath})
+            .videoBitrate('8000k')
+            .videoCodec('mpeg2video')
+            .fps(25)
+            .audioBitrate('192k')
+            .audioCodec('mp2')
+            .audioFrequency(48000)
+            .outputOptions(['-keyint_min 50'])//设置最小关键帧间距
+            .saveToFile(path.join(saveVideoDir, `${videoName}.ts`))
+            .on('error', function (err) {
+              console.log(`${bundleName} 第${videoDir}集 ${videoName} 转码失败====>${err}`)
+              resolve('fail')
+            })
+            .on('end', function () {
+              console.log(`${bundleName} 第${videoDir}集 ${videoName} 转码成功`)
+              resolve('success')
+            })
+        })
+      }
+
+    } catch (e) {
+      //over look error
+    }
+
+  }
+
+  codecVideos()
   // 遍历转码
-  contentFiles.forEach(function (videoDir) {
-    const VideoDirPath = path.join(originalDir, videoDir)
-    if (!isDir(VideoDirPath)) {
-      //拷贝剧集海报
-      fs.writeFileSync(path.join(bundleDir, videoDir), fs.readFileSync(VideoDirPath))
-      return
-    }
-
-    //读取视频文件夹下的视频文件
-    const videoFiles = fs.readdirSync(VideoDirPath)
-    var videoFilePath = null
-    var videoName = null
-    if (videoFiles.length === 1) {
-      //只有视频 直接抽帧
-      videoFilePath = path.join(VideoDirPath, videoFiles[0])
-      videoName = getNoneExtFileName(videoFiles[0])
-    }
-    if (videoFiles.length === 2) {
-      //若有海报
-      const video = isImg(videoFiles[0]) ? videoFiles[1] : videoFiles[0]
-      videoFilePath = path.join(VideoDirPath, video)
-      videoName = getNoneExtFileName(video)
-    }
-    if (!videoFilePath) {
-      console.log(bundleDir + videoDir + '视频文件不存在')
-      return
-    }
-
-    //创建存放单个视频的文件夹
-    const saveVideoDir = path.join(bundleDir, videoDir)
-    if (!fs.existsSync(saveVideoDir)) {
-      fs.mkdirSync(saveVideoDir)
-    }
-
-    //开始转码
-    //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
-    //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
-
-
-    new ffmpeg({source: videoFilePath})
-      .withVideoBitrate('8000k')
-      .withVideoCodec('mpeg2video')
-      .withAudioBitrate('192k')
-      //.withAudioCodec('aac')
-      .duration(1)
-      .outputOptions(['-vtag DIVX'])
-      .saveToFile(path.join(saveVideoDir, `${videoName}.ts`))
-      .on('error', function (err) {
-        console.log(`${bundleName} 第${videoDir}集 ${videoName} 转码失败====>${err}`)
-      })
-      .on('end', function () {
-        console.log(`${bundleName} 第${videoDir}集 ${videoName} 转码成功`)
-      })
-  })
+  //contentFiles.forEach(function (videoDir) {
+  //  const VideoDirPath = path.join(originalDir, videoDir)
+  //  if (!isDir(VideoDirPath)) {
+  //    //拷贝剧集海报
+  //    fs.writeFileSync(path.join(bundleDir, videoDir), fs.readFileSync(VideoDirPath))
+  //    return
+  //  }
+  //
+  //  //读取视频文件夹下的视频文件
+  //  const videoFiles = fs.readdirSync(VideoDirPath)
+  //  var videoFilePath = null
+  //  var videoName = null
+  //  if (videoFiles.length === 1) {
+  //    //只有视频 直接抽帧
+  //    videoFilePath = path.join(VideoDirPath, videoFiles[0])
+  //    videoName = getNoneExtFileName(videoFiles[0])
+  //  }
+  //  if (videoFiles.length === 2) {
+  //    //若有海报
+  //    const video = isImg(videoFiles[0]) ? videoFiles[1] : videoFiles[0]
+  //    videoFilePath = path.join(VideoDirPath, video)
+  //    videoName = getNoneExtFileName(video)
+  //  }
+  //  if (!videoFilePath) {
+  //    console.log(bundleDir + videoDir + '视频文件不存在')
+  //    return
+  //  }
+  //
+  //  //创建存放单个视频的文件夹
+  //  const saveVideoDir = path.join(bundleDir, videoDir)
+  //  if (!fs.existsSync(saveVideoDir)) {
+  //    fs.mkdirSync(saveVideoDir)
+  //  }
+  //
+  //  //开始转码
+  //  //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
+  //  //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
+  //
+  //
+  //  new ffmpeg({source: videoFilePath})
+  //    .withVideoBitrate('8000k')
+  //    .withVideoCodec('mpeg2video')
+  //    .withAudioBitrate('192k')
+  //    //.withAudioCodec('aac')
+  //    .duration(1)
+  //    .outputOptions(['-vtag DIVX'])
+  //    .saveToFile(path.join(saveVideoDir, `${videoName}.ts`))
+  //    .on('error', function (err) {
+  //      console.log(`${bundleName} 第${videoDir}集 ${videoName} 转码失败====>${err}`)
+  //    })
+  //    .on('end', function () {
+  //      console.log(`${bundleName} 第${videoDir}集 ${videoName} 转码成功`)
+  //    })
+  //})
 })()
 

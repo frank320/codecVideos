@@ -39,30 +39,68 @@
     fs.mkdirSync(bundleDir)
   }
 
-  // 遍历转码
-  contentFiles.forEach(function (video) {
-    const VideoPath = path.join(originalDir, video)
-    if (isDir(VideoPath)) {
-      return console.log('目录下不能出现文件夹')
+  //使用async函数控制流程 即 处理完一个视频后再处理下一个视频
+
+  async function codecVideos() {
+    try {
+      for (let video of contentFiles) {
+        await new Promise((resolve, reject)=> {
+          const VideoPath = path.join(originalDir, video)
+          if (isDir(VideoPath)) {
+            console.log('目录下不能出现文件夹')
+            return resolve('not file')
+          }
+          const videoName = getNoneExtFileName(video)
+
+          //开始转码
+          //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
+          //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
+
+          new ffmpeg({source: VideoPath})
+            .withVideoBitrate('512k')
+            .size('1280x?')
+            .withVideoCodec('libx264')
+            .withAudioBitrate('96k')
+            .saveToFile(path.join(bundleDir, `${videoName}.mp4`))
+            .on('error', function (err) {
+              console.log(`${bundleName}  ${videoName} 转码失败====>${err}`)
+              resolve('fail')
+            })
+            .on('end', function () {
+              console.log(`${bundleName}  ${videoName} 转码成功`)
+              resolve('success')
+            })
+        })
+      }
+    } catch (e) {
+      //overlook this fault
     }
-    const videoName = getNoneExtFileName(video)
+  }
 
-    //开始转码
-    //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
-    //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
-
-
-    new ffmpeg({source: VideoPath})
-      .withVideoBitrate('512k')
-      .size('1280x?')
-      .withVideoCodec('libx264')
-      .withAudioBitrate('96k')
-      .saveToFile(path.join(bundleDir, `${videoName}.mp4`))
-      .on('error', function (err) {
-        console.log(`${bundleName}  ${videoName} 转码失败====>${err}`)
-      })
-      .on('end', function () {
-        console.log(`${bundleName}  ${videoName} 转码成功`)
-      })
-  })
+  codecVideos()
+  // 遍历转码
+  //contentFiles.forEach(function (video) {
+  //  const VideoPath = path.join(originalDir, video)
+  //  if (isDir(VideoPath)) {
+  //    return console.log('目录下不能出现文件夹')
+  //  }
+  //  const videoName = getNoneExtFileName(video)
+  //
+  //  //开始转码
+  //  //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
+  //  //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
+  //
+  //  new ffmpeg({source: VideoPath})
+  //    .withVideoBitrate('512k')
+  //    .size('1280x?')
+  //    .withVideoCodec('libx264')
+  //    .withAudioBitrate('96k')
+  //    .saveToFile(path.join(bundleDir, `${videoName}.mp4`))
+  //    .on('error', function (err) {
+  //      console.log(`${bundleName}  ${videoName} 转码失败====>${err}`)
+  //    })
+  //    .on('end', function () {
+  //      console.log(`${bundleName}  ${videoName} 转码成功`)
+  //    })
+  //})
 })()

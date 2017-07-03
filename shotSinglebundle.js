@@ -47,57 +47,120 @@ const ffmpeg = require('fluent-ffmpeg')
     fs.mkdirSync(imgBundleFolder)
   }
 
-  bundleFiles.forEach(function (videoDir) {
-    const VideoDirPath = path.join(originalDir, videoDir)
-    if (!isDir(VideoDirPath)) {
+  //使用async函数控制流程 即 处理完一个视频后再处理下一个视频
+  async function shotVideoScreen() {
+    try {
+      for (let videoDir of bundleFiles) {
+        await new Promise(resolve=> {
+          const VideoDirPath = path.join(originalDir, videoDir)
+          if (!isDir(VideoDirPath)) {
+            return resolve('not dir')
+          }
+          //读取视频文件夹下的视频文件
+          const videoFiles = fs.readdirSync(VideoDirPath)
+          var videoFilePath = null
+          var videoName = null
+          if (videoFiles.length === 1) {
+            //只有视频 直接抽帧
+            videoFilePath = path.join(VideoDirPath, videoFiles[0])
+            videoName = getNoneExtFileName(videoFiles[0])
+          }
+          if (videoFiles.length === 2) {
+            //若有海报
+            const video = isImg(videoFiles[0]) ? videoFiles[1] : videoFiles[0]
+            videoFilePath = path.join(VideoDirPath, video)
+            videoName = getNoneExtFileName(video)
+          }
+          if (!videoFilePath) {
+            console.log(bundleDir + videoDir + '视频文件不存在')
+            return resolve('not exist')
+          }
 
-      return
-    }
+          //set the ffmpeg, ffprobe and flvtool2/flvmeta binary paths manually by using the following API commands:
+          //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
+          //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
+          //ffmpeg.setFlvtoolPath('ffplay.exe')
+          //抽帧
+          const imgName = `${videoDir}_${videoName}.jpg`
+          ffmpeg(videoFilePath)
+            .on('filenames', function (filenames) {
+              //console.log('Will generate ' + filenames.join(', '))
+            })
+            .on('end', function () {
+              console.log('video: ' + videoName + ' 抽帧成功');
+              resolve('success')
+            })
+            .on('error', function (err) {
+              console.log('an error happened: ' + err.message + ' => video:' + videoName + ' 抽帧失败');
+              resolve('fail')
+            })
+            .screenshots({
+              count: 1,
+              timestamps: ['60%'],
+              filename: imgName,
+              folder: imgBundleFolder,
+              size: '350x200'
+            })
+        })
+      }
 
-    //读取视频文件夹下的视频文件
-    const videoFiles = fs.readdirSync(VideoDirPath)
-    var videoFilePath = null
-    var videoName = null
-    if (videoFiles.length === 1) {
-      //只有视频 直接抽帧
-      videoFilePath = path.join(VideoDirPath, videoFiles[0])
-      videoName = getNoneExtFileName(videoFiles[0])
+    } catch (e) {
+      //over look error
     }
-    if (videoFiles.length === 2) {
-      //若有海报
-      const video = isImg(videoFiles[0]) ? videoFiles[1] : videoFiles[0]
-      videoFilePath = path.join(VideoDirPath, video)
-      videoName = getNoneExtFileName(video)
-    }
-    if (!videoFilePath) {
-      console.log(bundleDir + videoDir + '视频文件不存在')
-      return
-    }
+    console.log(`剧集${bundleName}抽帧完毕`)
+  }
 
-    //set the ffmpeg, ffprobe and flvtool2/flvmeta binary paths manually by using the following API commands:
-    //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
-    //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
-    //ffmpeg.setFlvtoolPath('ffplay.exe')
-    //抽帧
-    const imgName = `${videoDir}_${videoName}.jpg`
-    ffmpeg(videoFilePath)
-      .on('filenames', function (filenames) {
-        //console.log('Will generate ' + filenames.join(', '))
-      })
-      .on('end', function () {
-        console.log('video: ' + videoName + ' 抽帧成功');
-      })
-      .on('error', function (err) {
-        console.log('an error happened: ' + err.message + ' => video:' + videoName + ' 抽帧失败');
-      })
-      .screenshots({
-        count: 1,
-        timestamps: ['60%'],
-        filename: imgName,
-        folder: imgBundleFolder,
-        size: '350x200'
-      })
-  })
-
+  shotVideoScreen()
+  //bundleFiles.forEach(function (videoDir) {
+  //  const VideoDirPath = path.join(originalDir, videoDir)
+  //  if (!isDir(VideoDirPath)) {
+  //
+  //    return
+  //  }
+  //
+  //  //读取视频文件夹下的视频文件
+  //  const videoFiles = fs.readdirSync(VideoDirPath)
+  //  var videoFilePath = null
+  //  var videoName = null
+  //  if (videoFiles.length === 1) {
+  //    //只有视频 直接抽帧
+  //    videoFilePath = path.join(VideoDirPath, videoFiles[0])
+  //    videoName = getNoneExtFileName(videoFiles[0])
+  //  }
+  //  if (videoFiles.length === 2) {
+  //    //若有海报
+  //    const video = isImg(videoFiles[0]) ? videoFiles[1] : videoFiles[0]
+  //    videoFilePath = path.join(VideoDirPath, video)
+  //    videoName = getNoneExtFileName(video)
+  //  }
+  //  if (!videoFilePath) {
+  //    console.log(bundleDir + videoDir + '视频文件不存在')
+  //    return
+  //  }
+  //
+  //  //set the ffmpeg, ffprobe and flvtool2/flvmeta binary paths manually by using the following API commands:
+  //  //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
+  //  //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
+  //  //ffmpeg.setFlvtoolPath('ffplay.exe')
+  //  //抽帧
+  //  const imgName = `${videoDir}_${videoName}.jpg`
+  //  ffmpeg(videoFilePath)
+  //    .on('filenames', function (filenames) {
+  //      //console.log('Will generate ' + filenames.join(', '))
+  //    })
+  //    .on('end', function () {
+  //      console.log('video: ' + videoName + ' 抽帧成功');
+  //    })
+  //    .on('error', function (err) {
+  //      console.log('an error happened: ' + err.message + ' => video:' + videoName + ' 抽帧失败');
+  //    })
+  //    .screenshots({
+  //      count: 1,
+  //      timestamps: ['60%'],
+  //      filename: imgName,
+  //      folder: imgBundleFolder,
+  //      size: '350x200'
+  //    })
+  //})
 
 })()
