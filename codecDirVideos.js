@@ -48,8 +48,8 @@
     const videoName = getNoneExtFileName(video)
 
     //开始转码
-    ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
-    ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
+    //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
+    //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
 
 
     new ffmpeg({source: VideoPath})

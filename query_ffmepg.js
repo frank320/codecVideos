@@ -5,8 +5,8 @@
 const ffmpeg = require('fluent-ffmpeg')
 const path = require('path')
   //开始转码
-ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
-ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
+//ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
+//ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
 
 //ffmpeg.getAvailableFormats(function(err, formats) {
 //  console.log('Available formats:');

@@ -75,8 +75,8 @@ const ffmpeg = require('fluent-ffmpeg')
     }
 
     //set the ffmpeg, ffprobe and flvtool2/flvmeta binary paths manually by using the following API commands:
-    ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
-    ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
+    //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
+    //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
     //ffmpeg.setFlvtoolPath('ffplay.exe')
     //抽帧
     const imgName = `${videoDir}_${videoName}.jpg`
