@@ -32,7 +32,7 @@
 
   const contentFiles = fs.readdirSync(originalDir)
   const bundleName = /\\([^\\]+)$/.exec(originalDir)[1]
-
+  const totalCount = contentFiles.length
   //创建存放转码之后的剧集文件夹
   const bundleDir = path.join(targetDir, bundleName)
   if (!fs.existsSync(bundleDir)) {
@@ -43,7 +43,7 @@
 
   async function codecVideos() {
     try {
-      for (let video of contentFiles) {
+      for (let [index,video] of contentFiles.entries()) {
         await new Promise((resolve, reject)=> {
           const VideoPath = path.join(originalDir, video)
           if (isDir(VideoPath)) {
@@ -63,11 +63,11 @@
             .withAudioBitrate('96k')
             .saveToFile(path.join(bundleDir, `${videoName}.mp4`))
             .on('error', function (err) {
-              console.log(`${bundleName}  ${videoName} 转码失败====>${err}`)
+              console.log(`${bundleName}  ${videoName} 转码失败 (${index + 1}/${totalCount})====>${err}`)
               resolve('fail')
             })
             .on('end', function () {
-              console.log(`${bundleName}  ${videoName} 转码成功`)
+              console.log(`${bundleName}  ${videoName} 转码成功  (${index + 1}/${totalCount})`)
               resolve('success')
             })
         })
@@ -75,6 +75,8 @@
     } catch (e) {
       //overlook this fault
     }
+    console.log(`${bundleName}  转码完毕`)
+    console.log(`-----------------------------------------------`)
   }
 
   codecVideos()
