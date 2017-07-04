@@ -87,13 +87,18 @@
           //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
 
           new ffmpeg({source: videoFilePath})
-            .videoBitrate('8000k')
-            .videoCodec('mpeg2video')
-            .fps(25)
-            .audioBitrate('192k')
-            .audioCodec('mp2')
-            .audioFrequency(48000)
-            .outputOptions(['-keyint_min 50'])//设置最小关键帧间距
+            .outputOptions([
+              '-b 6000000',
+              '-bf 2',
+              '-maxrate 6000000',
+              '-minrate 6000000',
+              '-bufsize 6400000',
+              '-muxrate 8000000',
+              '-max_delay 800000',
+              '-acodec copy',
+              '-vcodec libx264',
+              '-x264opts keyint=25:qcomp=1.0:nal-hrd=cbr:threads=3:sliced_threads:qpmin=15:aud:force-cfr'
+            ])
             .saveToFile(path.join(saveVideoDir, `${videoName}.ts`))
             .on('error', function (err) {
               console.log(`${bundleName} 第${videoDir}集 ${videoName} 转码失败====>${err}`)
@@ -109,7 +114,8 @@
     } catch (e) {
       //over look error
     }
-
+    console.log(`${bundleName}  转码完毕`)
+    console.log(`-----------------------------------------------`)
   }
 
   codecVideos()
