@@ -67,7 +67,7 @@ const ffmpeg = require('fluent-ffmpeg')
                 var videoFilePath = null
                 var videoName = null
                 if (videoFiles.length === 1) {
-                  //只有视频 直接抽帧
+                  //只有视频
                   videoFilePath = path.join(VideoDirPath, videoFiles[0])
                   videoName = getNoneExtFileName(videoFiles[0])
                 }
@@ -106,15 +106,15 @@ const ffmpeg = require('fluent-ffmpeg')
                     '-g 50',
                     '-acodec mp2',
                     '-ar 48000',
-                    '-b:a 128k'
+                    '-b:a 192k'
                   ])
                   .saveToFile(path.join(saveVideoDir, `${videoName}.ts`))
                   .on('error', function (err) {
-                    console.log(`${bundleName} 第${videoDir}集 ${videoName} 转码失败 (${index + 1}/${totalCount})====>${err}`)
+                    console.log(`${bundleDir} 第${videoDir}集 ${videoName} 转码失败 (${index + 1}/${totalCount})====>${err}`)
                     resolve('fail')
                   })
                   .on('end', function () {
-                    console.log(`${bundleName} 第${videoDir}集 ${videoName} 转码成功  (${index + 1}/${totalCount})`)
+                    console.log(`${bundleDir} 第${videoDir}集 ${videoName} 转码成功  (${index + 1}/${totalCount})`)
                     resolve('success')
                   })
               })
@@ -123,7 +123,7 @@ const ffmpeg = require('fluent-ffmpeg')
           } catch (e) {
             //over look error
           }
-          console.log(`${bundleName}  转码完毕`)
+          console.log(`${bundleDir}  转码完毕`)
           console.log(`-----------------------------------------------`)
         }
 
