@@ -58,9 +58,12 @@
 
           new ffmpeg({source: VideoPath})
             .withVideoBitrate('512k')
-            .size('1280x?')
+            .size('1280x720')
             .withVideoCodec('libx264')
             .withAudioBitrate('96k')
+            .audioCodec('aac')
+            .audioFrequency(48000)
+            .audioChannels(2)
             .saveToFile(path.join(bundleDir, `${videoName}.mp4`))
             .on('error', function (err) {
               console.log(`${bundleName}  ${videoName} 转码失败 (${index + 1}/${totalCount})====>${err}`)
