@@ -57,31 +57,16 @@
           //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
 
           new ffmpeg({source: VideoPath})
-            //.withVideoBitrate('512k')
-            ////.size('1280x720')
-            //.withVideoCodec('libx264')
-            //.withAudioBitrate('96k')
-            //.audioCodec('aac')
-            //.audioFrequency(48000)
-            //.audioChannels(2)
-            //.outputOptions('-vf crop=1280:720:0:0')
-            ////.outputOptions('-vf cropdetect=limit=0')
-            .outputOptions([
-              '-b 6000000',
-              '-bf 2',
-              '-r 25',
-              '-maxrate 6000000',
-              '-minrate 6000000',
-              '-bufsize 6400000',
-              '-muxrate 8000000',
-              '-max_delay 800000',
-              '-vcodec libx264',
-              '-x264opts keyint=50:qcomp=1.0:nal-hrd=cbr:threads=3:sliced_threads:qpmin=15:aud:force-cfr:b-pyramid=none',
-              '-acodec mp2',
-              '-ar 48000',
-              '-b:a 192k'
-            ])
-            .saveToFile(path.join(bundleDir, `${videoName}.ts`))
+            .withVideoBitrate('512k')
+            //.size('1280x720')
+            .withVideoCodec('libx264')
+            .withAudioBitrate('96k')
+            .audioCodec('aac')
+            .audioFrequency(48000)
+            .audioChannels(2)
+            .outputOptions('-vf crop=1280:720:0:0')
+            //.outputOptions('-vf cropdetect=limit=0')
+            .saveToFile(path.join(bundleDir, `${videoName}.mp4`))
             .on('error', function (err) {
               console.log(`${bundleName}  ${videoName} 转码失败 (${index + 1}/${totalCount})====>${err}`)
               resolve('fail')
