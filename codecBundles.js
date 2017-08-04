@@ -2,7 +2,7 @@
  * Created by Frank on 2017/5/29.
  * 批量视频转码
  * originalDir: 目录层级 originalDir/剧集文件夹/单个视频文件夹/视频文件+[海报]
- * node app.js originalDir imgDir
+ * node app.js originalDir targetDir
  */
 const fs = require('fs')
 const path = require('path')
@@ -39,7 +39,8 @@ const ffmpeg = require('fluent-ffmpeg')
       for (let bundleDir of  bundles) {
         const bundleDirPath = path.join(originalDir, bundleDir)
         if (!isDir(bundleDirPath)) {
-          return
+          console.log(`目录中${bundleDir}不是文件夹`)
+          continue
         }
         //读取每个剧集的文件
         const contentFiles = fs.readdirSync(bundleDirPath)
