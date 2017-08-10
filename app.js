@@ -43,7 +43,9 @@ const ffmpeg = require('fluent-ffmpeg')
     try {
       for (let bundleDir of  bundles) {
         const bundleDirPath = path.join(originalDir, bundleDir)
-        if (!isDir(bundleDirPath)) return
+        if (!isDir(bundleDirPath)) {
+          continue
+        }
         //读取每个剧集的文件
         const bundleFiles = fs.readdirSync(bundleDirPath)
 
