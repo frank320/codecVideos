@@ -57,15 +57,18 @@
           //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
 
           new ffmpeg({source: VideoPath})
-            .withVideoBitrate('512k')
-            //.size('1280x720')
-            .withVideoCodec('libx264')
-            .withAudioBitrate('96k')
-            .audioCodec('aac')
-            .audioFrequency(48000)
-            .audioChannels(2)
-            .outputOptions('-vf crop=1280:720:0:0')
-            //.outputOptions('-vf cropdetect=limit=0')
+            .duration(30)
+            //.withVideoBitrate('512k')
+            .size('1280x720')
+            //.withVideoCodec('libx264')
+            //.withAudioBitrate('96k')
+            //.audioCodec('aac')
+            //.audioFrequency(48000)
+            //.audioChannels(2)
+            .outputOptions([
+              '-vf crop=1280:720:0:0',
+              '-acodec copy',
+            ])
             .saveToFile(path.join(bundleDir, `${videoName}.mp4`))
             .on('error', function (err) {
               console.log(`${bundleName}  ${videoName} 转码失败 (${index + 1}/${totalCount})====>${err}`)
@@ -79,6 +82,7 @@
       }
     } catch (e) {
       //overlook this fault
+      console.log(e)
     }
     console.log(`${bundleName}  转码完毕`)
     console.log(`-----------------------------------------------`)
