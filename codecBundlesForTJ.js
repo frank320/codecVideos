@@ -57,7 +57,7 @@ const ffmpeg = require('fluent-ffmpeg')
             for (let [index, video] of contentFiles.entries()) {
               await new Promise(resolve => {
                 const videoFilePath = path.join(bundleDirPath, video)
-                if (isDir(VideoDirPath)) {
+                if (isDir(videoFilePath)) {
                   return resolve('not file')
                 }
 
