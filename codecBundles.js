@@ -14,7 +14,7 @@ const ffmpeg = require('fluent-ffmpeg')
   const originalDir = args[0] //源文件目录
   const targetDir = args[1] || __dirname//存放图片目录
   if (!originalDir) {
-    console.log('请输入需要抽帧的视频所在目录文件夹名称')
+    console.log('请输入需要转码的视频所在目录文件夹名称')
     return
   }
 
@@ -103,9 +103,11 @@ const ffmpeg = require('fluent-ffmpeg')
                     '-bufsize 6400000',
                     '-muxrate 8000000',
                     '-max_delay 800000',
-                    '-acodec copy',
                     '-vcodec libx264',
-                    '-x264opts keyint=25:qcomp=1.0:nal-hrd=cbr:threads=3:sliced_threads:qpmin=15:aud:force-cfr'
+                    '-x264opts keyint=50:qcomp=1.0:nal-hrd=cbr:threads=3:sliced_threads:qpmin=15:aud:force-cfr:b-pyramid=none',
+                    '-acodec mp2',
+                    '-ar 48000',
+                    '-b:a 192k'
                   ])
                   .saveToFile(path.join(saveVideoDir, `${videoName}.ts`))
                   .on('error', function (err) {
