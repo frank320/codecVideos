@@ -7,6 +7,7 @@
   const ffmpeg = require('fluent-ffmpeg')
   const path = require('path')
   const fs = require('fs')
+
   //常用方法
   function isDir(pathName) {//pathName为文件的绝对路径
     const stat = fs.lstatSync(pathName)
@@ -43,33 +44,49 @@
 
   async function codecVideos() {
     try {
-      for (let [index,video] of contentFiles.entries()) {
-        await new Promise((resolve, reject)=> {
+      for (let [index, video] of contentFiles.entries()) {
+        await new Promise((resolve, reject) => {
           const VideoPath = path.join(originalDir, video)
           if (isDir(VideoPath)) {
             console.log('目录下不能出现文件夹')
             return resolve('not file')
           }
           const videoName = getNoneExtFileName(video)
-
           //开始转码
           //ffmpeg.setFfmpegPath(path.join(__dirname, './ffmpeg/ffmpeg.exe'))
           //ffmpeg.setFfprobePath(path.join(__dirname, './ffmpeg/ffprobe.exe'))
 
           new ffmpeg({source: VideoPath})
-            .duration(30)
-            //.withVideoBitrate('512k')
-            .size('1280x720')
-            //.withVideoCodec('libx264')
-            //.withAudioBitrate('96k')
-            //.audioCodec('aac')
-            //.audioFrequency(48000)
-            //.audioChannels(2)
+          // .duration(30)
+          // //.withVideoBitrate('512k')
+          // .size('1280x720')
+          // //.withVideoCodec('libx264')
+          // //.withAudioBitrate('96k')
+          // //.audioCodec('aac')
+          // //.audioFrequency(48000)
+          // //.audioChannels(2)
+          // .outputOptions([
+          //   '-vf crop=1280:720:0:0',
+          //   '-acodec copy',
+          // ])
+          // .saveToFile(path.join(bundleDir, `${videoName}.mp4`))
+
             .outputOptions([
-              '-vf crop=1280:720:0:0',
-              '-acodec copy',
+              '-b 6000000',
+              '-bf 2',
+              '-r 25',
+              '-maxrate 6000000',
+              '-minrate 6000000',
+              '-bufsize 6400000',
+              '-muxrate 8000000',
+              '-max_delay 800000',
+              '-vcodec libx264',
+              '-x264opts keyint=50:qcomp=1.0:nal-hrd=cbr:threads=3:sliced_threads:qpmin=15:aud:force-cfr:b-pyramid=none',
+              '-acodec mp2',
+              '-ar 48000',
+              '-b:a 192k'
             ])
-            .saveToFile(path.join(bundleDir, `${videoName}.mp4`))
+            .saveToFile(path.join(bundleDir, `${videoName}.ts`))
             .on('error', function (err) {
               console.log(`${bundleName}  ${videoName} 转码失败 (${index + 1}/${totalCount})====>${err}`)
               resolve('fail')
