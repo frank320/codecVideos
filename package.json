@@ -12,7 +12,8 @@
   "keywords": [],
   "author": "",
   "dependencies": {
-    "fluent-ffmpeg": "2.1.2"
+    "fluent-ffmpeg": "2.1.2",
+    "moment": "^2.20.1"
   },
   "license": "ISC"
 }

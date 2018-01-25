@@ -7,6 +7,8 @@
   const ffmpeg = require('fluent-ffmpeg')
   const path = require('path')
   const fs = require('fs')
+  const moment = require('moment')
+
 
   //常用方法
   function isDir(pathName) {//pathName为文件的绝对路径
@@ -20,6 +22,10 @@
     return /(.+)\.\w+$/.exec(fileName)[1]
   }
 
+  //当前时间
+  function currentTime() {
+    return `[${moment(+new Date()).format('YYYY-MM-DD HH:mm:ss')}]`
+  }
 
   const args = process.argv.splice(2)
   const originalDir = args[0] //源视频文件目录
@@ -88,11 +94,11 @@
             ])
             .saveToFile(path.join(bundleDir, `${videoName}.ts`))
             .on('error', function (err) {
-              console.log(`${bundleName}  ${videoName} 转码失败 (${index + 1}/${totalCount})====>${err}`)
+              console.log(`${bundleName}(${index + 1}/${totalCount}) ==>《${videoName}》转码失败 ${currentTime()} ==> ${err.message}`)
               resolve('fail')
             })
             .on('end', function () {
-              console.log(`${bundleName}  ${videoName} 转码成功  (${index + 1}/${totalCount})`)
+              console.log(`${bundleName}(${index + 1}/${totalCount}) ==>《${videoName}》转码成功 ${currentTime()}`)
               resolve('success')
             })
         })
@@ -101,7 +107,7 @@
       //overlook this fault
       console.log(e)
     }
-    console.log(`${bundleName}  转码完毕`)
+    console.log(`${bundleName} ==> 转码完毕 ${currentTime()}`)
     console.log(`-----------------------------------------------`)
   }
 

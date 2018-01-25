@@ -2,12 +2,13 @@
  * Created by Frank on 2017/5/29.
  * 批量视频转码
  * originalDir: 目录层级 originalDir/剧集文件夹/单个视频文件夹/视频文件+[海报]
- * node app.js originalDir targetDir
+ * node codecBundles.js originalDir targetDir
  */
 const fs = require('fs')
 const path = require('path')
 const ffmpeg = require('fluent-ffmpeg')
-  ;
+const moment = require('moment')
+;
 (function () {
 
   const args = process.argv.splice(2)
@@ -32,6 +33,10 @@ const ffmpeg = require('fluent-ffmpeg')
     return /(.+)\.\w+$/.exec(fileName)[1]
   }
 
+  //当前时间
+  function currentTime() {
+    return `[${moment(+new Date()).format('YYYY-MM-DD HH:mm:ss')}]`
+  }
 
   const bundles = fs.readdirSync(originalDir) //获取源目录所有文件名
   async function codecBundles() {
@@ -43,8 +48,26 @@ const ffmpeg = require('fluent-ffmpeg')
           continue
         }
         //读取每个剧集的文件
-        const contentFiles = fs.readdirSync(bundleDirPath)
-        const totalCount = contentFiles.length
+        let contentFiles = fs.readdirSync(bundleDirPath)
+        //文件过滤 排序
+        const dirsArr = []
+        const otherArr = []
+        for (let item of contentFiles) {
+          if (parseInt(item)) {
+            dirsArr.push(item)
+            continue
+          }
+          if (!parseInt(item) && !isDir(path.join(bundleDirPath, item))) {
+            otherArr.push(item)
+            continue
+          }
+        }
+        dirsArr.sort((a, b) => {
+          return (parseInt(a) - parseInt(b))
+        })
+        contentFiles = dirsArr.concat(otherArr)
+        const totalCount = dirsArr.length
+
         //创建一个存放剧集文件夹
         const BundleFolder = path.join(targetDir, bundleDir)
         if (!fs.existsSync(BundleFolder)) {
@@ -54,13 +77,13 @@ const ffmpeg = require('fluent-ffmpeg')
         //使用async函数控制流程 即 处理完一个视频后再处理下一个视频
         async function codecVideos(contentFiles) {
           try {
-            for (let [index,videoDir] of contentFiles.entries()) {
-              await new Promise(resolve=> {
+            for (let [index, videoDir] of contentFiles.entries()) {
+              await new Promise(resolve => {
                 const VideoDirPath = path.join(bundleDirPath, videoDir)
                 if (!isDir(VideoDirPath)) {
                   //拷贝剧集海报
                   fs.writeFileSync(path.join(BundleFolder, videoDir), fs.readFileSync(VideoDirPath))
-                  console.log(`${bundleDir} 海报拷贝成功 (${index + 1}/${totalCount})`)
+                  console.log(`${videoDir} ==> 文件拷贝成功 ${currentTime()}`)
                   return resolve('not dir')
                 }
                 //读取视频文件夹下的视频文件
@@ -111,11 +134,11 @@ const ffmpeg = require('fluent-ffmpeg')
                   ])
                   .saveToFile(path.join(saveVideoDir, `${videoName}.ts`))
                   .on('error', function (err) {
-                    console.log(`${bundleDir} 第${videoDir}集 ${videoName} 转码失败 (${index + 1}/${totalCount})====>${err}`)
+                    console.log(`${bundleDir}(${videoDir}/${totalCount}) ==>《${videoName}》转码失败 ${currentTime()} ==> ${err.message}`)
                     resolve('fail')
                   })
                   .on('end', function () {
-                    console.log(`${bundleDir} 第${videoDir}集 ${videoName} 转码成功  (${index + 1}/${totalCount})`)
+                    console.log(`${bundleDir}(${videoDir}/${totalCount}) ==>《${videoName}》转码成功 ${currentTime()}`)
                     resolve('success')
                   })
               })
@@ -124,7 +147,8 @@ const ffmpeg = require('fluent-ffmpeg')
           } catch (e) {
             //over look error
           }
-          console.log(`${bundleDir}  转码完毕`)
+          console.log(`${bundleDir} ==> 转码完毕 ${currentTime()}`)
+          console.log(`-----------------------------------------------`)
           console.log(`-----------------------------------------------`)
         }
 
@@ -135,7 +159,7 @@ const ffmpeg = require('fluent-ffmpeg')
       //overlook error
     }
 
-    console.log(`${originalDir} 目录下所有视频处理完毕`)
+    console.log(`${originalDir} ==> 目录下所有视频处理完毕 ${currentTime()}`)
   }
 
   codecBundles()

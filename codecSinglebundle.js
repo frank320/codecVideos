@@ -10,6 +10,8 @@
   const ffmpeg = require('fluent-ffmpeg')
   const path = require('path')
   const fs = require('fs')
+  const moment = require('moment')
+
   //常用方法
   function isDir(pathName) {//pathName为文件的绝对路径
     const stat = fs.lstatSync(pathName)
@@ -25,6 +27,10 @@
     return /(.+)\.\w+$/.exec(fileName)[1]
   }
 
+  //当前时间
+  function currentTime() {
+    return `[${moment(+new Date()).format('YYYY-MM-DD HH:mm:ss')}]`
+  }
 
   const args = process.argv.splice(2)
   const originalDir = args[0] //源视频文件目录
@@ -36,9 +42,26 @@
   }
 
 
-  const contentFiles = fs.readdirSync(originalDir)
+  let contentFiles = fs.readdirSync(originalDir)
   const bundleName = /\\([^\\]+)$/.exec(originalDir)[1]
-  const totalCount = contentFiles.length
+  //文件过滤 排序
+  const dirsArr = []
+  const otherArr = []
+  for (let item of contentFiles) {
+    if (parseInt(item)) {
+      dirsArr.push(item)
+      continue
+    }
+    if (!parseInt(item) && !isDir(path.join(originalDir, item))) {
+      otherArr.push(item)
+      continue
+    }
+  }
+  dirsArr.sort((a, b) => {
+    return (parseInt(a) - parseInt(b))
+  })
+  contentFiles = dirsArr.concat(otherArr)
+  const totalCount = dirsArr.length
   //创建存放转码之后的剧集文件夹
   const bundleDir = path.join(targetDir, bundleName)
   if (!fs.existsSync(bundleDir)) {
@@ -48,13 +71,13 @@
   //使用async函数控制流程 即 处理完一个视频后再处理下一个视频
   async function codecVideos() {
     try {
-      for (let [index,videoDir] of contentFiles.entries()) {
-        await new Promise(resolve=> {
+      for (let [index, videoDir] of contentFiles.entries()) {
+        await new Promise(resolve => {
           const VideoDirPath = path.join(originalDir, videoDir)
           if (!isDir(VideoDirPath)) {
             //拷贝剧集海报
             fs.writeFileSync(path.join(bundleDir, videoDir), fs.readFileSync(VideoDirPath))
-            console.log(`${bundleName} 海报拷贝成功 (${index + 1}/${totalCount})`)
+            console.log(`${videoDir} ==> 文件拷贝成功 ${currentTime()}`)
             return resolve('not dir')
           }
           //读取视频文件夹下的视频文件
@@ -105,11 +128,11 @@
             ])
             .saveToFile(path.join(saveVideoDir, `${videoName}.ts`))
             .on('error', function (err) {
-              console.log(`${bundleName} 第${videoDir}集 ${videoName} 转码失败 (${index + 1}/${totalCount})====>${err}`)
+              console.log(`${bundleName}(${videoDir}/${totalCount}) ==>《${videoName}》转码失败 ${currentTime()} ==> ${err.message}`)
               resolve('fail')
             })
             .on('end', function () {
-              console.log(`${bundleName} 第${videoDir}集 ${videoName} 转码成功  (${index + 1}/${totalCount})`)
+              console.log(`${bundleName}(${videoDir}/${totalCount}) ==>《${videoName}》转码成功 ${currentTime()}`)
               resolve('success')
             })
         })
@@ -118,7 +141,7 @@
     } catch (e) {
       //over look error
     }
-    console.log(`${bundleName}  转码完毕`)
+    console.log(`${bundleName} ==> 转码完毕 ${currentTime()}`)
     console.log(`-----------------------------------------------`)
   }
 
